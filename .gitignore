@@ -1,0 +1,30 @@
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+*.egg-info/
+
+# node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# env + secrets
+.env
+.env.*
+!.env.example
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# eval + run artefacts (results.md is committed on purpose)
+evals/.cache/
+*.log

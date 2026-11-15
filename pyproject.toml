@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chronicledeck"
+version = "0.1.0"
+description = "ChronicleDeck: a narrative intelligence studio. Typed, versioned canon with evidence-backed lint."
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "sqlalchemy[asyncio]>=2.0.30",
+  "asyncpg>=0.29",
+  "alembic>=1.13",
+  "pgvector>=0.3",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "email-validator>=2.1",
+  "PyJWT>=2.8",
+  "arq>=0.26",
+  "redis>=5.0",
+  "structlog>=24.1",
+]
+
+[project.optional-dependencies]
+# Installed now so the live window starts without dependency churn. Nothing imports these yet.
+llm = [
+  "anthropic>=0.40",
+  "google-genai>=0.3",
+  "langfuse>=2.50",
+  "jinja2>=3.1",
+  "tiktoken>=0.7",
+]
+dev = [
+  "pytest>=8.2",
+  "pytest-asyncio>=0.23",
+  "hypothesis>=6.100",
+  "httpx>=0.27",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "pre-commit>=3.7",
+]
+
+[tool.setuptools]
+py-modules = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "apps/api"]
+asyncio_mode = "auto"
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["apps/web", "node_modules", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC"]
+ignore = ["B008"] # FastAPI Depends() in argument defaults is the idiom
+
+[tool.ruff.lint.per-file-ignores]
+"apps/api/alembic/versions/*" = ["E501", "I001"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["apps/api/app", "pipeline", "engines", "memory"]
+mypy_path = ["apps/api", "."]
+strict = true
+plugins = ["pydantic.mypy"]
+explicit_package_bases = true
+exclude = ["apps/api/alembic/"]
+
+[[tool.mypy.overrides]]
+module = ["pgvector.*", "arq.*"]
+ignore_missing_imports = true
