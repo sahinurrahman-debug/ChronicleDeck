@@ -31,7 +31,7 @@ export interface LintViolation {
   evidence: EvidenceItem[];
 }
 
-export type BibleSection = "character" | "rule" | "language" | "faction" | "npc";
+export type BibleSection = "character" | "place" | "rule" | "language" | "faction" | "npc";
 
 export interface BibleCardData {
   id: string;

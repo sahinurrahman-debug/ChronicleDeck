@@ -23,21 +23,29 @@ interface LintState {
 
 export const lintKey = new PluginKey<LintState>("chronicleLint");
 
+/** First place `quote` appears inside a single text node, as document positions. */
+export function findQuoteRange(doc: PMNode, quote: string): { from: number; to: number } | null {
+  let found: { from: number; to: number } | null = null;
+  doc.descendants((node, pos) => {
+    if (found || !node.isText || !node.text) return;
+    const at = node.text.indexOf(quote);
+    if (at >= 0) found = { from: pos + at, to: pos + at + quote.length };
+  });
+  return found;
+}
+
 function build(doc: PMNode, marks: LintMark[], activeId: string | null): DecorationSet {
   const decorations: Decoration[] = [];
-  doc.descendants((node, pos) => {
-    if (!node.isText || !node.text) return;
-    for (const m of marks) {
-      const at = node.text.indexOf(m.quote);
-      if (at < 0) continue;
-      decorations.push(
-        Decoration.inline(pos + at, pos + at + m.quote.length, {
-          class: `lint lint-${m.severity}${m.id === activeId ? " lint-active" : ""}`,
-          "data-lint-id": m.id,
-        }),
-      );
-    }
-  });
+  for (const m of marks) {
+    const range = findQuoteRange(doc, m.quote);
+    if (!range) continue;
+    decorations.push(
+      Decoration.inline(range.from, range.to, {
+        class: `lint lint-${m.severity}${m.id === activeId ? " lint-active" : ""}`,
+        "data-lint-id": m.id,
+      }),
+    );
+  }
   return DecorationSet.create(doc, decorations);
 }
 

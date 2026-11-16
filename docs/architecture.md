@@ -10,8 +10,8 @@ flowchart LR
   web["Next.js<br/>(apps/web)"] -- "REST / SSE" --> api["FastAPI<br/>(apps/api)"]
   api --> orch["Orchestrator<br/>Stage DAG"]
   orch --> router["Model Router"]
-  router --> claude["Claude<br/>Opus / Sonnet / Haiku"]
-  router --> gemini["Gemini<br/>Pro / Flash"]
+  router --> gemini["Gemini (primary)<br/>Pro: plan, draft, compile<br/>Flash: claims, summaries"]
+  router --> adaption["Adaption<br/>creative enhancer (tuned)<br/>judge (non-Google)"]
   orch --> lore["Lore engine"] & psyche["Psyche engine"] & dialect["Dialect + language"] & sandbox["Sandbox engine"] & validation["Validation engine"]
   lore & psyche & dialect & sandbox & validation --> pg[("Postgres + pgvector")]
   api --> pg
@@ -35,8 +35,10 @@ flowchart LR
 flowchart TD
   A["assemble_working_memory<br/>(5 slots)"] --> B[plan_beats]
   B --> C["validate_plan<br/>canon refs exist · motives fit psyche · NPC knowledge scope"]
-  C --> D["generate (stream)"]
-  D --> E[dialect_transduce]
+  C --> D["generate (Gemini, stream)"]
+  D --> D2["creative_enhance (Adaption)<br/>skipped if Off or no model"]
+  D2 --> D3["enhance_guard (code)<br/>falls back to the draft"]
+  D3 --> E[dialect_transduce]
   E --> F[extract_claims]
   F --> G[lore_check] & H[psyche_check] & I[language_gate] & J[voice_check]
   G & H & I & J --> K[verify_evidence]
@@ -46,6 +48,17 @@ flowchart TD
   N --> O[author_review]
   O --> P["commit (snapshot + memory)"]
 ```
+
+## Model roles
+
+| Role | Model | Details |
+|---|---|---|
+| Primary | Gemini Pro | Planning, drafting, canon compile, hard repairs |
+| Utility | Gemini Flash | Claim extraction, summaries, NPC ticks |
+| Creative enhancer | Adaption-tuned model, **not trained yet** | Rewrites the draft for voice and imagery. Output is untrusted and checked afterwards ([ADR 0007](adr/0007-creative-enhancer-is-untrusted.md), [tuning plan](creative-model.md)) |
+| Judge | Non-Google model on Adaption (`qwen3.5-397b`, fallback `deepseek-v4-flash`) | Verdicts with evidence ([ADR 0004](adr/0004-cross-family-judge.md)) |
+
+Why these providers: [ADR 0006](adr/0006-gemini-primary-adaption-enhancer-and-judge.md).
 
 ## Where the pre-built API stops
 

@@ -1,16 +1,25 @@
-// Tokens per memory slot for one generated chapter (the real numbers come from run_trace.slot_tokens).
+// How much of your story the assistant reads at each step of one chapter (sample numbers).
 export const SLOT_TOKENS = [
-  { stage: "plan", global: 3200, character: 900, branch: 600, episodic: 700, task: 300 },
-  { stage: "generate", global: 3200, character: 1300, branch: 800, episodic: 1100, task: 500 },
-  { stage: "judge", global: 0, character: 700, branch: 500, episodic: 0, task: 1500 },
+  { stage: "Planning", global: 3200, character: 900, branch: 600, episodic: 700, task: 300 },
+  { stage: "Drafting", global: 3200, character: 1300, branch: 800, episodic: 1100, task: 500 },
+  { stage: "Polishing", global: 1800, character: 900, branch: 0, episodic: 0, task: 1400 },
+  { stage: "Checking", global: 0, character: 700, branch: 500, episodic: 0, task: 1500 },
 ];
 
 export const SLOT_KEYS = ["global", "character", "branch", "episodic", "task"] as const;
 
+export const SLOT_LABEL: Record<(typeof SLOT_KEYS)[number], string> = {
+  global: "Your world",
+  character: "Characters",
+  branch: "This storyline",
+  episodic: "Earlier chapters",
+  task: "This scene",
+};
+
 export const HEALTH_STATS = [
-  { label: "Continuity score", value: "0.82", note: "12 open flags" },
-  { label: "Cache hit", value: "71%", note: "canon prefix" },
-  { label: "Latency", value: "14.2s", note: "plan → verdicts" },
+  { label: "Consistency", value: "82%", note: "12 open notes" },
+  { label: "Context reused", value: "71%", note: "keeps checks quick and cheap" },
+  { label: "Check time", value: "14 sec", note: "per chapter" },
   { label: "Cost", value: "$0.18", note: "per chapter" },
 ];
 

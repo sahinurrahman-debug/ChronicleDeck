@@ -28,7 +28,8 @@
 **Why this works:**
 - **Evidence or it doesn't ship.** A flag with no evidence, or whose quotes don't match their sources exactly, is dropped. This is what keeps the lint trustworthy enough to leave on.
 - **Deterministic where possible.** Closed-lexicon conlang checks, timeline rules, psychology transition limits and NPC knowledge scoping are code, so they can't hallucinate and can be tested.
-- **Cross-family judging.** Claude writes, Gemini judges, so the judge doesn't share the generator's blind spots.
+- **Cross-family judging.** Gemini writes; a non-Google model hosted on Adaption judges, so the judge doesn't share the generator's blind spots.
+- **Creative without losing canon.** A creative enhancer (a model fine-tuned with Adaption) rewrites Gemini's draft for voice and imagery, but its output is treated as untrusted and goes through every check afterwards. If it breaks canon, the plain draft is used.
 - **Branches stay separate.** Every fork is its own timeline with its own snapshots, so "what if" comparisons are a diff, not a guess.
 - **Flag, never block.** Authors keep control: strictness changes what is surfaced, one click marks a flag *Intentional*, and that choice is remembered.
 
@@ -43,8 +44,8 @@ flowchart LR
   web["Next.js<br/>(apps/web)"] -- "REST / SSE" --> api["FastAPI<br/>(apps/api)"]
   api --> orch["Orchestrator<br/>Stage DAG"]
   orch --> router["Model Router"]
-  router --> claude["Claude<br/>Opus / Sonnet / Haiku"]
-  router --> gemini["Gemini<br/>Pro / Flash"]
+  router --> gemini["Gemini (primary)<br/>Pro: plan, draft, compile<br/>Flash: claims, summaries"]
+  router --> adaption["Adaption<br/>creative enhancer (tuned)<br/>judge (non-Google)"]
   orch --> lore["Lore"] & psyche["Psyche"] & dialect["Dialect + language"] & sandbox["Sandbox"] & validation["Validation"]
   lore & psyche & dialect & sandbox & validation --> pg[("Postgres + pgvector")]
   api --> pg
@@ -56,8 +57,8 @@ flowchart LR
 ```
 assemble_working_memory (5 slots)
   └─► plan_beats ─► validate_plan (canon refs exist, motives fit psyche, NPC knowledge scope)
-        └─► generate (stream) ─► dialect_transduce
-              └─► extract_claims ─┬─► lore_check
+        └─► generate (Gemini, stream) ─► creative_enhance (Adaption) ─► enhance_guard (code)
+              └─► dialect_transduce ─► extract_claims ─┬─► lore_check
                                   ├─► psyche_check
                                   ├─► language_gate        ─► verify_evidence ─► aggregate
                                   └─► voice_check                                  └─► repair(spans) ≤2
@@ -80,10 +81,19 @@ Every stage validates its input and output schema, retries with the error fed ba
 
 | Engine | What it does | How |
 |---|---|---|
-| **Lore** | Canon compiler, branch-scoped truth, timeline checks | Opus compiles notes into proposals; code enforces "dead characters can't act", "one place per scene" |
+| **Lore** | Canon compiler, branch-scoped truth, timeline checks | Gemini Pro compiles notes into proposals; code enforces "dead characters can't act", "one place per scene" |
 | **Psyche** | Keeps characters in character | Transition rules in code (e.g. trust can't jump more than 0.3 per chapter without a declared major event); judge with evidence |
 | **Dialect + language** | Per-character voice and invented languages | Deterministic rewrite-rule transducer; closed lexicon, so any unknown conlang word is a hard flag; phonotactics FSM validates new words |
 | **Sandbox** | NPCs that respect the world | Spawner anchors backstory to existing IDs; knowledge scoping flags "knowledge leaks" |
+
+### Creative enhancer (Adaption)
+
+Gemini drafts the scene from the plan; the enhancer rewrites it to be more vivid and less generic. Because a creative model is also more likely to invent things, it is boxed in:
+
+- It runs **before** the checks, so its output is linted like any other generated text.
+- `enhance_guard` (plain code) rejects a rewrite that drops planned beats or canon references, adds named entities that aren't in the plan, adds invented-language words outside the lexicon, or changes length wildly. A rejected passage falls back to Gemini's draft.
+- The author sets **Creativity: Plain / Subtle / Bold**. Plain skips the stage.
+- **Status:** no model is fine-tuned yet. The plan, constraints from Adaption's docs, and open questions (notably, how a tuned model gets served) are in [docs/creative-model.md](docs/creative-model.md). Until a model is configured the stage is skipped.
 
 ### Ten hallucination defences (each one measured)
 
@@ -92,7 +102,7 @@ Every stage validates its input and output schema, retries with the error fed ba
 | 1 | Plan before prose | New elements must be declared up front |
 | 2 | Reference integrity | Every canon ref checked against the DB |
 | 3 | Claim extraction | Prose broken into atomic claims |
-| 4 | Cross-family judge | Claude generates, Gemini judges |
+| 4 | Cross-family judge | Gemini generates, a non-Google model judges |
 | 5 | Evidence required | Flags without evidence are dropped |
 | 6 | Exact-quote verification | Trigger and evidence quotes must match their sources exactly, checked in code |
 | 7 | Deterministic gates | Conlang, timeline, psyche delta, knowledge scope |
@@ -127,7 +137,29 @@ infra/          docker-compose + Dockerfiles
 PREBUILT.md     every file committed before the live window
 ```
 
-The eight screens: **New Story** · **Story Bible** · **Editor** (Watch / Co-write / Draft, evidence cards) · **Screenplay** (Fountain) · **Story Map** · **What-if Explorer** · **Proposals inbox** · **Health & cost**.
+The screens (all written for authors, not engineers):
+
+| Page | Route | What it is |
+|---|---|---|
+| Home | `/` | Hero, how it works, features, call-to-action |
+| Start a story | `/start` | Title, paste notes or upload a file |
+| Write | `/write` | Editor with notes on anything that doesn't fit, each with the reason; "Fix this", "Keep as is"; writing style and how closely to check |
+| Screenplay | `/screenplay` | Script format with preview |
+| Story bible | `/bible` | Characters, places, rules, languages, groups, side characters: approve, edit or remove |
+| Storylines | `/storylines` | Map of every path the story has taken, coloured by how well each chapter fits |
+| Compare | `/compare` | Two storylines side by side: world changes, trust between characters, a chapter-by-chapter chart |
+| Suggestions | `/suggestions` | New characters, words and facts waiting for approval |
+| Story health | `/health` | Consistency, check time and cost, what the assistant reads at each step |
+
+### Design system
+
+- **Palette:** cream `#f2e8da` is the page colour; brown `#3b2418` is the text and the main button colour. Everything else is a lighter or darker step of those two, plus four muted status colours. Dark mode swaps them (deep brown page, cream text and buttons).
+- **Type:** two families only: Lora (headings, and your story's text) and Inter (everything else). Body text is 17px; nothing readable is set below 14px.
+- **Theme toggle:** follows the system setting on first visit, remembers your choice, and applies before the page paints so there is no flash.
+- **Motion:** short fades and lifts, using only opacity and transform; disabled for people who ask their system for reduced motion.
+- **States:** every screen has a loading skeleton and, where it can be empty, a written empty state with a next step.
+- **Language:** screens use everyday words ("notes", "story bible", "storylines", "suggestions"), never internal terms.
+- **Accessibility:** every text and status colour pair meets WCAG AA contrast (4.5:1) in both themes (body text on cream is about 12:1), skip link, visible focus rings, labelled controls, tables with captions, no horizontal scroll at phone width.
 
 ---
 
@@ -140,7 +172,7 @@ python -m venv .venv
 # Windows PowerShell: .\.venv\Scripts\Activate.ps1      macOS/Linux: source .venv/bin/activate
 pip install -e ".[dev]"
 npm --prefix apps/web install
-cp .env.example .env
+cp .env.example .env     # model keys (GEMINI_API_KEY, ADAPTION_API_KEY) are only needed from the live build on
 ```
 
 **Run the checks** (no database needed):
@@ -179,8 +211,10 @@ Or run Postgres and Redis in Docker and the apps on the host: `make dev-deps`, `
 | Editor / viz | TipTap (inline lint decorations), React Flow (branch map), Recharts | Squiggles and gloss tooltips in the text; DAG and charts |
 | Database | Postgres 16 + pgvector | Relational canon and vector memory in one store, with branch-filtered search |
 | Jobs / realtime | Arq + Redis, Server-Sent Events | Background compile/embed/audit; streaming generation |
-| Generation | Claude Opus 5.5 / Sonnet 5.5 / Haiku 5.5 | Heavy reasoning, prose and dialogue, cheap utility calls; prompt caching on the canon prefix |
-| Judging | Gemini Pro (verdicts), Gemini Flash (claim extraction) | A different model family from the generator |
+| Primary model | Gemini Pro (planning, drafting, canon compile, repairs), Gemini Flash (claim extraction, summaries, NPC ticks) | One main model family; Gemini context caching on the canon prefix |
+| Creative enhancer | Model fine-tuned with Adaption (Adaptive Data + AutoScientist), not trained yet | More creative prose than a general model; boxed in by `enhance_guard` and the checks |
+| Judging | Non-Google model on Adaption's API (`qwen3.5-397b`, fallback `deepseek-v4-flash`) | A different family from the generator; same SDK as the enhancer |
+| Provider SDKs | `google-genai`, `adaption` (Python) | Listed in the `llm` extra; nothing calls them until the live build |
 | Auth | Email + password (scrypt) with JWT | Simple and sufficient; built into the pre-built API |
 | Hosting | Vercel (web), Railway (api, worker), Neon (Postgres), Upstash or Railway Redis | Quick public URL |
 | Observability | Langfuse + structlog | Traces, cost, tokens per memory slot |
@@ -195,16 +229,16 @@ Or run Postgres and Redis in Docker and the apps on the host: `make dev-deps`, `
 **Built live :**
 
  Model router and adapters, Stage contract, tracing, claim and verdict prompts, psyche transition rules, canon compiler, lore check, exact-quote verifier, conlang gate 
- Memory tree and working-memory slots, Gemini judges and evidence gate, dialect transducer, streaming editor with live lint, planner and generator with caching, repair loop, NPC spawner, evidence cards 
+ Memory tree and working-memory slots, non-Google judges and evidence gate, dialect transducer, streaming editor with live lint, planner and Gemini generator with caching, creative enhancer stage and `enhance_guard`, repair loop, NPC spawner, evidence cards 
  Forking, snapshots and deltas, proposals and exceptions, voice judge and screenplay register, compare API and What-if, sandbox tick, cost panel with real data, eval runs, hardening, deploy 
 
-**Evaluation plan.** 2–3 universes × 10 chapters × 2 branches with about 25 planted errors each (lore, psychology, timeline, voice, language, knowledge leak). Compare (A) raw Claude with all lore pasted in, (B) the pipeline with Claude judging Claude, and (C) the pipeline with Gemini judging Claude, plus ablations if time allows. Metrics: recall and precision per error type, residual errors per 1,000 words, evidence-validity rate, out-of-lexicon rate, cached-token share, cost and latency per chapter. **No results exist yet**; `make eval` will write `evals/results.md`.
+**Evaluation plan.** 2–3 universes × 10 chapters × 2 branches with about 25 planted errors each (lore, psychology, timeline, voice, language, knowledge leak). Compare (A) raw Gemini with all lore pasted in, (B) the pipeline with Gemini judging Gemini, (C) the pipeline with a non-Google judge, and (D) run C plus the creative enhancer, plus ablations if time allows. Metrics: recall and precision per error type, residual errors per 1,000 words, evidence-validity rate, out-of-lexicon rate, cached-token share, cost and latency per chapter, and for D the violations the enhancer introduces per 1,000 words alongside a creativity preference score (enhanced vs plain draft). **No results exist yet**; `make eval` will write `evals/results.md`.
 
-**Demo:** a three-minute "abandonment cascade" scenario showing a flag with its evidence, a fork, and the What-if comparison.
+**Demo:** a three-minute "abandonment cascade" scenario showing a note with the reason behind it, a split storyline, and the side-by-side comparison.
 
 **Stretch:** whole-branch long-context audit for slow character drift, live dialect ghost text, and a sandbox playground where dropping an event returns NPC reactions as proposals.
 
 ---
 
 ## Docs
-[Architecture](docs/architecture.md) · [Memory model](docs/memory.md) · [ADRs](docs/adr/) · [Pre-built inventory](PREBUILT.md) · [Demo script](docs/demo-script.md) · [User guide](docs/user-guide.md)
+[Architecture](docs/architecture.md) · [Memory model](docs/memory.md) · [Creative model plan](docs/creative-model.md) · [ADRs](docs/adr/) · [Adaption docs](https://docs.adaptionlabs.ai) · [Pre-built inventory](PREBUILT.md) · [Demo script](docs/demo-script.md) · [User guide](docs/user-guide.md)

@@ -16,7 +16,7 @@ LIVE_ROUTES: list[tuple[str, str, str]] = [
     ("POST", "/proposals/{proposal_id}/accept", "Ledger: accept a proposal into canon"),
     ("POST", "/proposals/{proposal_id}/reject", "Ledger: reject a proposal"),
     ("POST", "/branches", "Fork a branch with snapshot inheritance"),
-    ("POST", "/chapters/{chapter_id}/generate", "SSE: plan -> prose -> verdicts"),
+    ("POST", "/chapters/{chapter_id}/generate", "SSE: plan -> draft -> enhance -> verdicts"),
     ("POST", "/chapters/{chapter_id}/validate", "Re-run checks on author-edited text"),
     ("POST", "/violations/{violation_id}/fix", "Span-level repair"),
     ("POST", "/violations/{violation_id}/intentional", "Record an exception rule"),

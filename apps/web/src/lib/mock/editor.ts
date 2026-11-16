@@ -5,26 +5,26 @@ export const SAMPLE_HTML = [
   "<p>“Corin,” she said, and the word came out warm, almost fond. He was waiting beneath the lamp, still wearing the crown he had sworn never to touch.</p>",
 ].join("");
 
-// Quotes below match SAMPLE_HTML exactly; the real verifier checks this in code, here it is hand-kept.
+// Each quote must match the text above exactly (the real checker verifies this in code).
 export const SAMPLE_VIOLATIONS: LintViolation[] = [
   {
     id: "v1",
     quote: "the word came out warm, almost fond",
     kind: "psyche",
     severity: "warn",
-    message: "Mara's trust in Corin is at -0.7. A jump to warmth needs a cause event.",
+    message: "Mara deeply distrusts Corin at this point. Sounding warm toward him needs a reason.",
     suggestedFix: "the word came out flat, rehearsed",
     evidence: [
       {
         kind: "snapshot",
-        label: "Relationship after ch. 3",
-        quote: "trust(Mara → Corin) = -0.7",
-        location: "Chapter 3 snapshot",
+        label: "Where your story stood",
+        quote: "Mara's trust in Corin is very low after chapter 3.",
+        location: "Chapter 3",
       },
       {
         kind: "rule",
-        label: "Psyche transition rule",
-        quote: "|Δtrust| ≤ 0.3 per chapter unless a major_event is declared",
+        label: "A rule you set",
+        quote: "Trust shouldn't swing sharply in one chapter unless something big happens.",
       },
     ],
   },
@@ -33,13 +33,13 @@ export const SAMPLE_VIOLATIONS: LintViolation[] = [
     quote: "still wearing the crown he had sworn never to touch",
     kind: "lore",
     severity: "error",
-    message: "Corin renounced the crown in chapter 2. No event restores it.",
+    message: "Corin gave up the crown in chapter 2, and nothing in your story gives it back.",
     suggestedFix: "standing where the crown had once rested on his brow",
     evidence: [
       {
         kind: "fact",
-        label: "Canon fact",
-        quote: "Corin renounced the Ember crown",
+        label: "In your story bible",
+        quote: "Corin renounced the Ember crown.",
         location: "Chapter 2, scene 4",
       },
     ],
@@ -49,12 +49,12 @@ export const SAMPLE_VIOLATIONS: LintViolation[] = [
     quote: "the night the Ember Court burned",
     kind: "timeline",
     severity: "info",
-    message: "The Ember Court burns in chapter 4. This scene is set in chapter 3.",
+    message: "The Ember Court doesn't burn until chapter 4, but this scene is set in chapter 3.",
     suggestedFix: "the night the Ember Court was sealed",
     evidence: [
       {
         kind: "chapter_quote",
-        label: "Later chapter",
+        label: "Later in your story",
         quote: "The Ember Court burned until dawn.",
         location: "Chapter 4, scene 1",
       },

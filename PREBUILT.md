@@ -7,12 +7,13 @@ Anything not listed here is built live. Proof of compliance: the `prebuild-final
 
 | Area | Paths | Category | Notes |
 |---|---|---|---|
-| Next.js shell | `apps/web/src/app/layout.tsx`, `components/shell/`, `components/providers.tsx` | Shell, layouts | Sidebar nav, strictness control, TanStack Query provider |
+| Next.js shell | `apps/web/src/app/{layout,template,loading,not-found}.tsx`, `components/shell/`, `components/providers.tsx` | Shell, layouts | Navbar (mobile menu), footer, light/dark toggle, page transition, TanStack Query provider |
+| Landing page | `apps/web/src/app/page.tsx` | Hero, CTA banner | Hero, how it works, features, closing banner |
 | UI kit | `apps/web/src/components/ui/` | Tailwind/shadcn | Hand-written shadcn-style primitives (button, card, badge, input, segmented) |
-| All 8 screens, mock data | `apps/web/src/app/{new,bible,editor,screenplay,map,whatif,inbox,health}/` | Screens empty/mock | Data comes from `apps/web/src/lib/mock/` and is labelled on each screen |
+| All 8 screens, mock data | `apps/web/src/app/{start,write,screenplay,bible,storylines,compare,suggestions,health}/` | Screens empty/mock | Sample data from `apps/web/src/lib/mock/`, served through `use-mock.ts` so each screen already has loading and empty states. Labelled on each screen |
 | TipTap scaffold | `apps/web/src/components/editor/` | TipTap scaffold | Empty decoration hook: `setLintMarks(editor, marks, activeId)`. Fed with mock marks only |
 | React Flow scaffold | `apps/web/src/components/map/` | React Flow scaffold | Static mock branch graph |
-| Recharts scaffolds | `apps/web/src/components/{whatif,health}/` | Recharts scaffold | Mock series |
+| Recharts scaffolds | `apps/web/src/components/{compare,health}/` | Recharts scaffold | Mock series, theme-aware colours |
 | Web state + API client | `apps/web/src/lib/{store,api,types,utils}.ts` | Plain plumbing | `api.ts` is a thin fetch wrapper; screens don't call it yet |
 | FastAPI app | `apps/api/app/{main,config,db,deps}.py` | Plain CRUD plumbing | Lazy async engine; no DB access at import |
 | Auth routes | `apps/api/app/routers/auth.py`, `security.py` | Auth | Email + password, scrypt, JWT |
@@ -23,7 +24,7 @@ Anything not listed here is built live. Proof of compliance: the `prebuild-final
 | Worker wiring | `apps/api/app/worker.py` | Infra | Arq settings + a `ping` job only |
 | Docker, CI, tooling | `infra/`, `.github/workflows/ci.yml`, `Makefile`, `.pre-commit-config.yaml`, `pyproject.toml`, `.env.example` | Docker, CI skeleton | |
 | Architecture docs | `docs/architecture.md`, `docs/memory.md`, `docs/adr/` | Architecture diagram | ADRs record decisions; implementations are live |
-| Tests for the above | `tests/unit/` | n/a | 28 tests: API surface, auth helpers, migration ↔ model drift guard |
+| Tests for the above | `tests/unit/` | n/a | 31 tests: API surface, auth helpers, migration ↔ model drift guard, provider config (judge is never Gemini/Gemma) |
 | Empty live-build folders | `pipeline/`, `engines/`, `memory/`, `universes/`, `evals/`, `tests/{integration,e2e}/` | Structure only | Packages contain a docstring and nothing else |
 
 ## What is deliberately NOT pre-built (★ built live)
@@ -48,6 +49,19 @@ These are marked "confirm" in the plan and are **not** included:
 2. **Seed universe content** (`universes/ashfall`, `halcyon`, `ledger`). Empty. The UI mock data is generic
    sample text, not a seed universe.
 
+3. **Fine-tuning the creative enhancer on Adaption before the event.** No model is trained yet
+   ([plan](docs/creative-model.md)). Training is model preparation rather than code, but whether it counts as
+   pre-build is the organisers' call. Also unresolved: Adaption's docs don't document serving a tuned model.
+
+## Model plan (changed 2026-11-16)
+
+Claude is not used. Gemini is the primary model; Adaption hosts the judge (a non-Google model) and, once
+trained, the creative enhancer. See [ADR 0006](docs/adr/0006-gemini-primary-adaption-enhancer-and-judge.md)
+and [ADR 0007](docs/adr/0007-creative-enhancer-is-untrusted.md). What this changed in the pre-build is
+configuration and docs only: provider settings in `apps/api/app/config.py` and `.env.example` (no code reads
+them yet), the `llm` extras in `pyproject.toml`, a creativity control and an "enhance" row on mock screens, and
+a test that the judge is never Gemini/Gemma.
+
 ## Deviations from the spec's data model
 
 - `app_user.password_hash` (nullable) added for the pre-built auth routes.
@@ -57,12 +71,12 @@ These are marked "confirm" in the plan and are **not** included:
 
 ## Not in the repo: manual pre-build items
 
-Keys and spend caps (Anthropic, Google, embeddings), Langfuse project, Vercel/Railway/Neon accounts,
+Keys and spend caps (Gemini, Adaption, embeddings), Langfuse project, Vercel/Railway/Neon accounts,
 Figma wireframes (see `docs/figma/README.md`), deck template. None of these can be created from code.
 
 ## Verified vs not verified
 
-Verified locally (Windows, Python 3.12 venv, Node 24): `ruff`, `mypy --strict`, `pytest` (28 pass),
+Verified locally (Windows, Python 3.12 venv, Node 24): `ruff`, `mypy --strict`, `pytest` (31 pass),
 `next lint`, `tsc --noEmit`, `next build`, and the editor squiggles/strictness/click behaviour in a browser.
 The migration was validated by rendering Postgres SQL offline (upgrade and downgrade).
 

@@ -1,30 +1,39 @@
+import { Info } from "lucide-react";
 import * as React from "react";
 
 export function PageHeader({
+  eyebrow,
   title,
   description,
   actions,
 }: {
+  eyebrow?: string;
   title: string;
   description?: string;
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {description && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>}
+    <header className="mb-8 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+      <div className="max-w-2xl">
+        {eyebrow && (
+          <p className="mb-2 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+            {eyebrow}
+          </p>
+        )}
+        <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">{title}</h1>
+        {description && <p className="mt-3 text-lg text-muted-foreground">{description}</p>}
       </div>
       {actions}
-    </div>
+    </header>
   );
 }
 
-/** Marks screens whose data is still placeholder content. Removed screen by screen when wired. */
-export function MockNotice() {
+/** Shown on screens that still use a sample story. */
+export function PreviewNote() {
   return (
-    <p className="mb-4 rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-      Pre-build scaffold: this screen shows sample data. It is wired to the pipeline during the live build.
+    <p className="mb-8 flex items-start gap-2.5 rounded-xl border border-dashed border-border bg-card/60 px-4 py-3 text-[15px] text-muted-foreground">
+      <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      You&apos;re looking at a sample story. Your own chapters will appear here once you start writing.
     </p>
   );
 }

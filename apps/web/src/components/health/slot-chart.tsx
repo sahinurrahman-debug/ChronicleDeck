@@ -10,29 +10,39 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SLOT_KEYS, SLOT_TOKENS } from "@/lib/mock/health";
+import { SLOT_KEYS, SLOT_LABEL, SLOT_TOKENS } from "@/lib/mock/health";
 
-// Five slots = five memory types. Hues are fixed per slot so the same slot reads the same everywhere.
-const SLOT_COLOR: Record<(typeof SLOT_KEYS)[number], string> = {
-  global: "hsl(248 55% 55%)",
-  character: "hsl(32 90% 50%)",
-  branch: "hsl(152 55% 40%)",
-  episodic: "hsl(210 70% 52%)",
-  task: "hsl(0 0% 55%)",
+const tick = { fontSize: 14, fill: "rgb(var(--muted-foreground))" };
+
+// One colour per kind of context, taken from the theme so it reads in light and dark.
+const SERIES_COLOR: Record<(typeof SLOT_KEYS)[number], string> = {
+  global: "rgb(var(--chart-1))",
+  character: "rgb(var(--chart-2))",
+  branch: "rgb(var(--chart-3))",
+  episodic: "rgb(var(--chart-4))",
+  task: "rgb(var(--chart-5))",
 };
 
 export function SlotChart() {
   return (
-    <div className="h-72">
+    <div className="h-80" role="img" aria-label="Stacked bar chart: how much of your story is read at each step">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={SLOT_TOKENS} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-          <XAxis dataKey="stage" tick={{ fontSize: 12 }} />
-          <YAxis tick={{ fontSize: 12 }} />
-          <Tooltip />
-          <Legend />
+        <BarChart data={SLOT_TOKENS} margin={{ top: 12, right: 16, bottom: 4, left: -4 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--border))" vertical={false} />
+          <XAxis dataKey="stage" tick={tick} stroke="rgb(var(--border))" />
+          <YAxis tick={tick} stroke="rgb(var(--border))" />
+          <Tooltip
+            cursor={{ fill: "rgb(var(--muted) / 0.5)" }}
+            contentStyle={{
+              background: "rgb(var(--card))",
+              border: "1px solid rgb(var(--border))",
+              borderRadius: 12,
+              color: "rgb(var(--foreground))",
+            }}
+          />
+          <Legend wrapperStyle={{ fontSize: 15 }} />
           {SLOT_KEYS.map((k) => (
-            <Bar key={k} dataKey={k} stackId="slots" fill={SLOT_COLOR[k]} />
+            <Bar key={k} dataKey={k} name={SLOT_LABEL[k]} stackId="reads" fill={SERIES_COLOR[k]} />
           ))}
         </BarChart>
       </ResponsiveContainer>
