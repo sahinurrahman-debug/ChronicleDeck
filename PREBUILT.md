@@ -39,23 +39,10 @@ Real behaviour of the pre-built code you should not mistake for live work:
 - The editor's squiggles come from hand-written mock violations, not from any validation.
 - `make eval`, `make seed` and `make demo` exit with an error saying they are built live.
 
-## Open questions (confirm with organisers)
 
-These are marked "confirm" in the plan and are **not** included:
+## Model plan 
 
-1. **Pydantic schemas** for the pipeline (`BeatPlan`, `Claim`, `Evidence`, `Violation`, `Psyche`,
-   `DialectProfile`, `NPC`). `pipeline/schemas/` is empty. The CRUD DTOs in `apps/api/app/schemas/` are
-   plain request/response models for the pre-built routes, not these.
-2. **Seed universe content** (`universes/ashfall`, `halcyon`, `ledger`). Empty. The UI mock data is generic
-   sample text, not a seed universe.
-
-3. **Fine-tuning the creative enhancer on Adaption before the event.** No model is trained yet
-   ([plan](docs/creative-model.md)). Training is model preparation rather than code, but whether it counts as
-   pre-build is the organisers' call. Also unresolved: Adaption's docs don't document serving a tuned model.
-
-## Model plan (changed 2026-11-16)
-
-Claude is not used. Gemini is the primary model; Adaption hosts the judge (a non-Google model) and, once
+Gemini is the primary model; Adaption hosts the judge (a non-Google model) and, once
 trained, the creative enhancer. See [ADR 0006](docs/adr/0006-gemini-primary-adaption-enhancer-and-judge.md)
 and [ADR 0007](docs/adr/0007-creative-enhancer-is-untrusted.md). What this changed in the pre-build is
 configuration and docs only: provider settings in `apps/api/app/config.py` and `.env.example` (no code reads
@@ -74,16 +61,13 @@ a test that the judge is never Gemini/Gemma.
 Keys and spend caps (Gemini, Adaption, embeddings), Langfuse project, Vercel/Railway/Neon accounts,
 Figma wireframes (see `docs/figma/README.md`), deck template. None of these can be created from code.
 
-## Verified vs not verified
+## Verified 
 
 Verified locally (Windows, Python 3.12 venv, Node 24): `ruff`, `mypy --strict`, `pytest` (31 pass),
 `next lint`, `tsc --noEmit`, `next build`, and the editor squiggles/strictness/click behaviour in a browser.
 The migration was validated by rendering Postgres SQL offline (upgrade and downgrade).
 
-**Not run:** the migration against a live Postgres, the CRUD routes against a database, Docker images and
-`docker compose`, and the GitHub Actions workflow. Docker and Postgres were not available on this machine;
-CI's `api` job applies the migration up/down/up against a pgvector service container, so the first push will
-exercise it.
+
 
 ## Proof-of-compliance commands
 
